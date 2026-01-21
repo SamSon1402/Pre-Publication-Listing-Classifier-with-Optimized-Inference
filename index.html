@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVAN-Edge | Pre-Publication Listing Intelligence</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cvan-green: #22c55e;
+            --cvan-green-glow: rgba(34, 197, 94, 0.3);
+            --cvan-blue: #0ea5e9;
+            --cvan-purple: #a855f7;
+            --cvan-orange: #f97316;
+            --cvan-red: #ef4444;
+            --cvan-yellow: #eab308;
+            --bg-black: #000000;
+            --bg-dark: #09090b;
+            --bg-card: #18181b;
+            --bg-elevated: #27272a;
+            --text-white: #fafafa;
+            --text-gray: #a1a1aa;
+            --text-dim: #71717a;
+            --border: rgba(161, 161, 170, 0.1);
+            --gradient-cvan: linear-gradient(135deg, #22c55e 0%, #0ea5e9 50%, #a855f7 100%);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-black);
+            color: var(--text-white);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Cyber Grid Background */
+        .cyber-bg {
+            position: fixed;
+            inset: 0;
+            background: 
+                linear-gradient(90deg, rgba(34, 197, 94, 0.03) 1px, transparent 1px),
+                linear-gradient(rgba(34, 197, 94, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+        }
+
+        .cyber-glow {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 0%, rgba(34, 197, 94, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 2rem;
+        }
+
+        .header-inner {
+            max-width: 1900px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--gradient-cvan);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo-icon::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.3) 50%, transparent 60%);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .logo-text h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: var(--gradient-cvan);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text p {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        .header-metrics {
+            display: flex;
+            gap: 3rem;
+        }
+
+        .header-metric {
+            text-align: center;
+            position: relative;
+        }
+
+        .header-metric::after {
+            content: '';
+            position: absolute;
+            right: -1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1px;
+            height: 30px;
+            background: var(--border);
+        }
+
+        .header-metric:last-child::after { display: none; }
+
+        .metric-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--cvan-green);
+        }
+
+        .metric-label {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .status-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.25rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-chip.live {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: var(--cvan-green);
+            color: var(--cvan-green);
+        }
+
+        .status-chip.live::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--cvan-green);
+            border-radius: 50%;
+            animation: livePulse 1.5s ease infinite;
+        }
+
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--cvan-green-glow); }
+            50% { opacity: 0.7; box-shadow: 0 0 0 8px transparent; }
+        }
+
+        /* Main Layout */
+        .main {
+            position: relative;
+            z-index: 1;
+            max-width: 1900px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            grid-template-rows: auto auto 1fr;
+            gap: 1rem;
+            min-height: calc(100vh - 140px);
+        }
+
+        @media (max-width: 1400px) {
+            .dashboard { grid-template-columns: 1fr; }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-body {
+            padding: 1.25rem;
+        }
+
+        /* Performance Banner */
+        .perf-banner {
+            grid-column: 1 / -1;
+            background: var(--bg-card);
+            border: 1px solid var(--cvan-green);
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .perf-banner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.05), transparent, rgba(14, 165, 233, 0.05));
+            pointer-events: none;
+        }
+
+        .perf-stat {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .perf-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1;
+        }
+
+        .perf-value.green { color: var(--cvan-green); }
+        .perf-value.blue { color: var(--cvan-blue); }
+        .perf-value.purple { color: var(--cvan-purple); }
+        .perf-value.orange { color: var(--cvan-orange); }
+        .perf-value.yellow { color: var(--cvan-yellow); }
+
+        .perf-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 0.5rem;
+        }
+
+        .perf-change {
+            font-size: 0.7rem;
+            margin-top: 0.3rem;
+        }
+
+        .perf-change.up { color: var(--cvan-green); }
+        .perf-change.down { color: var(--cvan-red); }
+
+        /* Live Classification */
+        .classification-zone {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .queue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .queue-stats {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.75rem;
+        }
+
+        .queue-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .queue-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+
+        /* Listing Queue */
+        .listing-queue {
+            flex: 1;
+            max-height: 450px;
+            overflow-y: auto;
+        }
+
+        .listing-item {
+            background: var(--bg-elevated);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid transparent;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .listing-item:hover {
+            transform: translateX(4px);
+        }
+
+        .listing-item.blocked { 
+            border-left-color: var(--cvan-red);
+            background: rgba(239, 68, 68, 0.1);
+        }
+        .listing-item.flagged { 
+            border-left-color: var(--cvan-orange);
+            background: rgba(249, 115, 22, 0.1);
+        }
+        .listing-item.approved { 
+            border-left-color: var(--cvan-green);
+            background: rgba(34, 197, 94, 0.1);
+        }
+        .listing-item.processing {
+            border-left-color: var(--cvan-blue);
+            animation: processingPulse 1s ease infinite;
+        }
+
+        @keyframes processingPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .listing-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .listing-product {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .listing-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--bg-card);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .listing-info h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .listing-info p {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        .listing-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .listing-status.blocked { background: var(--cvan-red); }
+        .listing-status.flagged { background: var(--cvan-orange); color: #000; }
+        .listing-status.approved { background: var(--cvan-green); color: #000; }
+        .listing-status.processing { background: var(--cvan-blue); }
+
+        .listing-scores {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .score-item {
+            background: var(--bg-card);
+            border-radius: 6px;
+            padding: 0.5rem;
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            margin-bottom: 0.2rem;
+        }
+
+        .score-value {
+            font-size: 0.9rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .score-value.danger { color: var(--cvan-red); }
+        .score-value.warning { color: var(--cvan-orange); }
+        .score-value.safe { color: var(--cvan-green); }
+
+        /* Latency Monitor */
+        .latency-chart {
+            height: 120px;
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            background: var(--bg-dark);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .latency-bar {
+            flex: 1;
+            background: var(--cvan-green);
+            border-radius: 2px 2px 0 0;
+            min-height: 2px;
+            transition: height 0.2s ease;
+        }
+
+        .latency-bar.warning { background: var(--cvan-orange); }
+        .latency-bar.danger { background: var(--cvan-red); }
+
+        .latency-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        .latency-stat {
+            background: var(--bg-elevated);
+            border-radius: 10px;
+            padding: 0.75rem;
+            text-align: center;
+        }
+
+        .latency-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .latency-stat-label {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        /* Model Info */
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .model-card {
+            background: var(--bg-elevated);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        .model-card-label {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 0.3rem;
+        }
+
+        .model-card-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Category Distribution */
+        .category-bars {
+            margin-top: 1rem;
+        }
+
+        .category-item {
+            margin-bottom: 0.75rem;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .category-bar {
+            height: 6px;
+            background: var(--bg-elevated);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .category-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        /* Throughput Gauge */
+        .gauge-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .gauge {
+            position: relative;
+            width: 180px;
+            height: 90px;
+        }
+
+        .gauge-bg {
+            position: absolute;
+            width: 180px;
+            height: 90px;
+            border-radius: 90px 90px 0 0;
+            background: var(--bg-elevated);
+            overflow: hidden;
+        }
+
+        .gauge-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 180px;
+            height: 90px;
+            border-radius: 90px 90px 0 0;
+            background: var(--gradient-cvan);
+            transform-origin: bottom center;
+            transition: transform 0.5s ease;
+        }
+
+        .gauge-center {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 70px;
+            border-radius: 70px 70px 0 0;
+            background: var(--bg-card);
+        }
+
+        .gauge-value {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.8rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--cvan-green);
+        }
+
+        .gauge-label {
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-top: 0.5rem;
+        }
+
+        /* Actions */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient-cvan);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px var(--cvan-green-glow);
+        }
+
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-gray);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card);
+            color: var(--text-white);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-card);
+            border: 1px solid var(--cvan-green);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-overlay.show { display: flex; }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title { font-size: 1.2rem; font-weight: 700; }
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-body { padding: 1.5rem; }
+    </style>
+</head>
+<body>
+    <div class="cyber-bg"></div>
+    <div class="cyber-glow"></div>
+
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <div class="logo-text">
+                    <h1>CVAN-Edge</h1>
+                    <p>Pre-Publication Intelligence</p>
+                </div>
+            </div>
+            <div class="header-metrics">
+                <div class="header-metric">
+                    <div class="metric-value" id="listingsScanned">2.4M</div>
+                    <div class="metric-label">Scanned Today</div>
+                </div>
+                <div class="header-metric">
+                    <div class="metric-value" id="blocked">847K</div>
+                    <div class="metric-label">Blocked</div>
+                </div>
+                <div class="header-metric">
+                    <div class="metric-value" id="avgLatency">23ms</div>
+                    <div class="metric-label">Avg Latency</div>
+                </div>
+                <div class="header-metric">
+                    <div class="metric-value" id="throughput">48K</div>
+                    <div class="metric-label">Req/sec</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="status-chip live">Pipeline Live</div>
+                <div class="status-chip">TensorRT Optimized</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="dashboard">
+            <!-- Performance Banner -->
+            <div class="perf-banner">
+                <div class="perf-stat">
+                    <div class="perf-value green" id="precision">99.7%</div>
+                    <div class="perf-label">Precision</div>
+                    <div class="perf-change up">↑ 0.2% this week</div>
+                </div>
+                <div class="perf-stat">
+                    <div class="perf-value blue" id="recall">98.9%</div>
+                    <div class="perf-label">Recall</div>
+                    <div class="perf-change up">↑ 0.5% this week</div>
+                </div>
+                <div class="perf-stat">
+                    <div class="perf-value purple" id="p95">34ms</div>
+                    <div class="perf-label">P95 Latency</div>
+                    <div class="perf-change up">↓ 8ms improved</div>
+                </div>
+                <div class="perf-stat">
+                    <div class="perf-value orange" id="blockRate">35.2%</div>
+                    <div class="perf-label">Block Rate</div>
+                    <div class="perf-change">Stable</div>
+                </div>
+                <div class="perf-stat">
+                    <div class="perf-value yellow" id="modelVersion">v3.2.1</div>
+                    <div class="perf-label">Model Version</div>
+                    <div class="perf-change">Deployed 2h ago</div>
+                </div>
+            </div>
+
+            <!-- Live Classification Zone -->
+            <div class="card classification-zone">
+                <div class="card-header">
+                    <h3 class="card-title"><span>⚡</span> Live Classification Queue</h3>
+                    <div class="queue-stats">
+                        <div class="queue-stat">
+                            <span>Queue:</span>
+                            <span class="queue-stat-value" style="color: var(--cvan-blue);" id="queueSize">247</span>
+                        </div>
+                        <div class="queue-stat">
+                            <span>Processing:</span>
+                            <span class="queue-stat-value" style="color: var(--cvan-green);" id="processing">48K/s</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="listing-queue" id="listingQueue"></div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Latency Monitor -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><span>📊</span> Latency Monitor</h3>
+                        <span style="font-size: 0.7rem; color: var(--text-dim);">Real-time</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="latency-chart" id="latencyChart"></div>
+                        <div class="latency-stats">
+                            <div class="latency-stat">
+                                <div class="latency-stat-value" style="color: var(--cvan-green);" id="p50">18ms</div>
+                                <div class="latency-stat-label">P50</div>
+                            </div>
+                            <div class="latency-stat">
+                                <div class="latency-stat-value" style="color: var(--cvan-blue);" id="p90">28ms</div>
+                                <div class="latency-stat-label">P90</div>
+                            </div>
+                            <div class="latency-stat">
+                                <div class="latency-stat-value" style="color: var(--cvan-orange);" id="p99">42ms</div>
+                                <div class="latency-stat-label">P99</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Model Info -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><span>🧠</span> Model Configuration</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="model-grid">
+                            <div class="model-card">
+                                <div class="model-card-label">Runtime</div>
+                                <div class="model-card-value" style="color: var(--cvan-green);">TensorRT</div>
+                            </div>
+                            <div class="model-card">
+                                <div class="model-card-label">Precision</div>
+                                <div class="model-card-value" style="color: var(--cvan-blue);">FP16</div>
+                            </div>
+                            <div class="model-card">
+                                <div class="model-card-label">Batch Size</div>
+                                <div class="model-card-value" style="color: var(--cvan-purple);">Dynamic</div>
+                            </div>
+                            <div class="model-card">
+                                <div class="model-card-label">GPU Memory</div>
+                                <div class="model-card-value" style="color: var(--cvan-orange);">4.2 GB</div>
+                            </div>
+                        </div>
+
+                        <div class="gauge-container">
+                            <div class="gauge">
+                                <div class="gauge-bg"></div>
+                                <div class="gauge-fill" id="gaugeFill" style="transform: rotate(-90deg) rotate(162deg);"></div>
+                                <div class="gauge-center"></div>
+                                <div class="gauge-value" id="gaugeValue">48K</div>
+                            </div>
+                        </div>
+                        <div class="gauge-label">Requests per Second</div>
+                    </div>
+                </div>
+
+                <!-- Category Distribution -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><span>📦</span> Category Distribution</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="category-bars" id="categoryBars"></div>
+                        
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" onclick="deployNewModel()">
+                                <span>🚀</span> Deploy v3.2.2
+                            </button>
+                            <button class="btn btn-secondary" onclick="viewMetrics()">
+                                <span>📈</span> Metrics
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportConfig()">
+                                <span>📄</span> Config
+                            </button>
+                            <button class="btn btn-secondary" onclick="runBenchmark()">
+                                <span>⚡</span> Benchmark
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Details</h3>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <span id="toastIcon">✅</span>
+        <div>
+            <strong id="toastTitle">Success</strong>
+            <div style="font-size: 0.75rem; color: var(--text-dim);" id="toastMsg">Operation completed</div>
+        </div>
+    </div>
+
+    <script>
+        // Sample listings data
+        const sampleListings = [
+            { id: 1, icon: '👟', name: 'Nike Air Force 1', seller: 'QuickShop_2847', platform: 'Amazon', status: 'blocked', confidence: 98.7, category: 'Footwear' },
+            { id: 2, icon: '👜', name: 'Gucci Marmont Bag', seller: 'LuxuryFinds_EU', platform: 'eBay', status: 'blocked', confidence: 99.2, category: 'Luxury' },
+            { id: 3, icon: '⌚', name: 'Apple Watch Series 9', seller: 'TechDeals_Pro', platform: 'Wish', status: 'approved', confidence: 12.4, category: 'Electronics' },
+            { id: 4, icon: '👕', name: 'Supreme Box Logo Tee', seller: 'StreetStyle_247', platform: 'Mercari', status: 'flagged', confidence: 67.8, category: 'Apparel' },
+            { id: 5, icon: '🕶️', name: 'Ray-Ban Aviators', seller: 'SunglassKing', platform: 'AliExpress', status: 'blocked', confidence: 94.5, category: 'Accessories' },
+            { id: 6, icon: '👠', name: 'Louboutin Heels', seller: 'DesignerDeals', platform: 'Poshmark', status: 'processing', confidence: 0, category: 'Footwear' },
+            { id: 7, icon: '🎧', name: 'AirPods Pro 2', seller: 'AudioWorld', platform: 'Amazon', status: 'approved', confidence: 8.2, category: 'Electronics' },
+            { id: 8, icon: '💄', name: 'Chanel No. 5 Perfume', seller: 'BeautyBargains', platform: 'eBay', status: 'blocked', confidence: 96.8, category: 'Beauty' }
+        ];
+
+        // Categories data
+        const categories = [
+            { name: 'Footwear', count: 847234, blocked: 31, color: 'var(--cvan-green)' },
+            { name: 'Luxury', count: 623847, blocked: 48, color: 'var(--cvan-purple)' },
+            { name: 'Electronics', count: 1247832, blocked: 22, color: 'var(--cvan-blue)' },
+            { name: 'Apparel', count: 982374, blocked: 35, color: 'var(--cvan-orange)' },
+            { name: 'Accessories', count: 534892, blocked: 41, color: 'var(--cvan-yellow)' }
+        ];
+
+        let latencyData = [];
+        let currentListings = [...sampleListings];
+
+        function init() {
+            renderListings();
+            renderLatencyChart();
+            renderCategories();
+            startLiveUpdates();
+        }
+
+        function renderListings() {
+            const queue = document.getElementById('listingQueue');
+            queue.innerHTML = currentListings.map(l => `
+                <div class="listing-item ${l.status}" onclick="showListingDetails(${l.id})">
+                    <div class="listing-header">
+                        <div class="listing-product">
+                            <div class="listing-icon">${l.icon}</div>
+                            <div class="listing-info">
+                                <h4>${l.name}</h4>
+                                <p>${l.seller} • ${l.platform}</p>
+                            </div>
+                        </div>
+                        <span class="listing-status ${l.status}">${l.status}</span>
+                    </div>
+                    <div class="listing-scores">
+                        <div class="score-item">
+                            <div class="score-label">Counterfeit</div>
+                            <div class="score-value ${l.confidence > 80 ? 'danger' : l.confidence > 50 ? 'warning' : 'safe'}">${l.status === 'processing' ? '...' : l.confidence + '%'}</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-label">Logo</div>
+                            <div class="score-value ${l.confidence > 70 ? 'danger' : 'safe'}">${l.status === 'processing' ? '...' : (l.confidence * 0.95).toFixed(1) + '%'}</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-label">Text</div>
+                            <div class="score-value ${l.confidence > 60 ? 'warning' : 'safe'}">${l.status === 'processing' ? '...' : (l.confidence * 0.88).toFixed(1) + '%'}</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-label">Latency</div>
+                            <div class="score-value safe">${l.status === 'processing' ? '...' : Math.floor(Math.random() * 20 + 15) + 'ms'}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderLatencyChart() {
+            const chart = document.getElementById('latencyChart');
+            // Initialize with random data
+            for (let i = 0; i < 40; i++) {
+                latencyData.push(Math.random() * 30 + 15);
+            }
+            updateLatencyChart();
+        }
+
+        function updateLatencyChart() {
+            const chart = document.getElementById('latencyChart');
+            chart.innerHTML = latencyData.map(v => {
+                const height = (v / 50) * 100;
+                const className = v > 40 ? 'danger' : v > 30 ? 'warning' : '';
+                return `<div class="latency-bar ${className}" style="height: ${height}%"></div>`;
+            }).join('');
+        }
+
+        function renderCategories() {
+            const container = document.getElementById('categoryBars');
+            const maxCount = Math.max(...categories.map(c => c.count));
+            
+            container.innerHTML = categories.map(c => `
+                <div class="category-item">
+                    <div class="category-header">
+                        <span>${c.name}</span>
+                        <span style="color: var(--cvan-red)">${c.blocked}% blocked</span>
+                    </div>
+                    <div class="category-bar">
+                        <div class="category-fill" style="width: ${(c.count / maxCount) * 100}%; background: ${c.color};"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showListingDetails(id) {
+            const listing = currentListings.find(l => l.id === id);
+            const modal = document.getElementById('modalOverlay');
+            const title = document.getElementById('modalTitle');
+            const body = document.getElementById('modalBody');
+
+            title.textContent = `${listing.icon} ${listing.name}`;
+            body.innerHTML = `
+                <div style="background: var(--bg-elevated); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.9rem; font-weight: 600;">Classification Result</span>
+                        <span class="listing-status ${listing.status}">${listing.status.toUpperCase()}</span>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.75rem;">Detection Scores</div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
+                        <div class="model-card">
+                            <div class="model-card-label">Counterfeit Score</div>
+                            <div class="model-card-value" style="color: ${listing.confidence > 80 ? 'var(--cvan-red)' : 'var(--cvan-green)'};">${listing.confidence}%</div>
+                        </div>
+                        <div class="model-card">
+                            <div class="model-card-label">Logo Match</div>
+                            <div class="model-card-value">${(listing.confidence * 0.95).toFixed(1)}%</div>
+                        </div>
+                        <div class="model-card">
+                            <div class="model-card-label">Text Analysis</div>
+                            <div class="model-card-value">${(listing.confidence * 0.88).toFixed(1)}%</div>
+                        </div>
+                        <div class="model-card">
+                            <div class="model-card-label">Inference Time</div>
+                            <div class="model-card-value" style="color: var(--cvan-green);">${Math.floor(Math.random() * 20 + 15)}ms</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.75rem;">Listing Details</div>
+                    <div style="background: var(--bg-elevated); border-radius: 10px; padding: 1rem;">
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
+                            <span style="color: var(--text-gray);">Seller</span>
+                            <span style="font-family: 'JetBrains Mono', monospace;">${listing.seller}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
+                            <span style="color: var(--text-gray);">Platform</span>
+                            <span>${listing.platform}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                            <span style="color: var(--text-gray);">Category</span>
+                            <span>${listing.category}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="overrideDecision(${listing.id})">Override Decision</button>
+                    <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+                </div>
+            `;
+            modal.classList.add('show');
+        }
+
+        function overrideDecision(id) {
+            showToast('✅ Override Recorded', 'Decision logged for model retraining');
+            closeModal();
+        }
+
+        function deployNewModel() {
+            showToast('🚀 Deploying...', 'Model v3.2.2 rolling out to all nodes');
+            setTimeout(() => {
+                document.getElementById('modelVersion').textContent = 'v3.2.2';
+                showToast('✅ Deployed', 'Model v3.2.2 is now live');
+            }, 2000);
+        }
+
+        function viewMetrics() {
+            const modal = document.getElementById('modalOverlay');
+            const title = document.getElementById('modalTitle');
+            const body = document.getElementById('modalBody');
+
+            title.textContent = '📈 Performance Metrics';
+            body.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                    <div class="model-card">
+                        <div class="model-card-label">Total Requests (24h)</div>
+                        <div class="model-card-value" style="color: var(--cvan-green);">2.4M</div>
+                    </div>
+                    <div class="model-card">
+                        <div class="model-card-label">Blocked (24h)</div>
+                        <div class="model-card-value" style="color: var(--cvan-red);">847K</div>
+                    </div>
+                    <div class="model-card">
+                        <div class="model-card-label">GPU Utilization</div>
+                        <div class="model-card-value" style="color: var(--cvan-blue);">78%</div>
+                    </div>
+                    <div class="model-card">
+                        <div class="model-card-label">Cache Hit Rate</div>
+                        <div class="model-card-value" style="color: var(--cvan-purple);">94.2%</div>
+                    </div>
+                    <div class="model-card">
+                        <div class="model-card-label">Avg Batch Size</div>
+                        <div class="model-card-value" style="color: var(--cvan-orange);">32</div>
+                    </div>
+                    <div class="model-card">
+                        <div class="model-card-label">Error Rate</div>
+                        <div class="model-card-value" style="color: var(--cvan-green);">0.02%</div>
+                    </div>
+                </div>
+            `;
+            modal.classList.add('show');
+        }
+
+        function exportConfig() {
+            showToast('📄 Exporting', 'Model configuration saved to YAML');
+        }
+
+        function runBenchmark() {
+            showToast('⚡ Benchmarking', 'Running inference benchmarks...');
+            setTimeout(() => {
+                showToast('✅ Complete', 'P99: 42ms, Throughput: 52K req/s');
+            }, 3000);
+        }
+
+        function closeModal(e) {
+            if (e && e.target !== document.getElementById('modalOverlay')) return;
+            document.getElementById('modalOverlay').classList.remove('show');
+        }
+
+        function showToast(title, msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastTitle').textContent = title;
+            document.getElementById('toastMsg').textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function startLiveUpdates() {
+            // Update latency chart
+            setInterval(() => {
+                latencyData.shift();
+                latencyData.push(Math.random() * 35 + 15);
+                updateLatencyChart();
+                
+                // Update latency stats
+                document.getElementById('p50').textContent = Math.floor(Math.random() * 5 + 16) + 'ms';
+                document.getElementById('p90').textContent = Math.floor(Math.random() * 8 + 25) + 'ms';
+                document.getElementById('p99').textContent = Math.floor(Math.random() * 10 + 38) + 'ms';
+            }, 500);
+
+            // Update throughput
+            setInterval(() => {
+                const throughput = Math.floor(Math.random() * 5000 + 46000);
+                document.getElementById('throughput').textContent = (throughput / 1000).toFixed(0) + 'K';
+                document.getElementById('gaugeValue').textContent = (throughput / 1000).toFixed(0) + 'K';
+                document.getElementById('processing').textContent = (throughput / 1000).toFixed(0) + 'K/s';
+                
+                // Update gauge
+                const rotation = -90 + (throughput / 60000) * 180;
+                document.getElementById('gaugeFill').style.transform = `rotate(${rotation}deg)`;
+            }, 2000);
+
+            // Simulate new listings
+            setInterval(() => {
+                // Move processing to final state
+                currentListings = currentListings.map(l => {
+                    if (l.status === 'processing') {
+                        const states = ['blocked', 'approved', 'flagged'];
+                        return { ...l, status: states[Math.floor(Math.random() * states.length)], confidence: Math.random() * 100 };
+                    }
+                    return l;
+                });
+                renderListings();
+            }, 3000);
+
+            // Update queue size
+            setInterval(() => {
+                document.getElementById('queueSize').textContent = Math.floor(Math.random() * 100 + 200);
+            }, 1500);
+        }
+
+        init();
+    </script>
+</body>
+</html>
